@@ -1,24 +1,38 @@
 from app.rag.ragDocuments import import_csv_to_vectordb_rag_ragDocuments
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import logging
+
+# ✅ 로거 설정
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 서버 시작...")
+    """FastAPI 애플리케이션 생명주기"""
+    
+    # ✅ Startup
+    logger.info("🚀 VINUS 서버 시작...")
     
     try:
         # CSV에서 Vector DB로 로드
-        result = import_csv_to_vectordb_rag_ragDocuments("./data/rag_documents.csv")
+        result = import_csv_to_vectordb_rag_ragDocuments("data/rag_documents.csv")
         
         if result["success"]:
-            print(f"✅ {result['message']}")
+            logger.info(f"✅ RAG 초기화 완료: {result['message']}")
         else:
-            print(f"❌ {result['message']}")
+            logger.warning(f"⚠️ RAG 초기화 실패: {result['message']}")
     
     except Exception as e:
-        print(f"❌ 오류: {str(e)}")
+        logger.error(f"❌ RAG 로드 오류: {str(e)}")
     
     yield
-    print("👋 서버 종료")
+    
+    # ✅ Shutdown
+    logger.info("👋 VINUS 서버 종료")
 
-app = FastAPI(lifespan=lifespan)
+# FastAPI 앱 생성
+app = FastAPI(
+    title="VINUS",
+    description="음성 기반 주문 시스템",
+    lifespan=lifespan
+)
