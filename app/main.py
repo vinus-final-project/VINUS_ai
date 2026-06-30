@@ -1,10 +1,25 @@
 from app.rag.ragDocuments import import_csv_to_vectordb_rag_ragDocuments
+from app.rag.ragService import get_rag_service_rag_service_rag_ragService
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from pydantic import BaseModel
 import logging
 
 # ✅ 로거 설정
 logger = logging.getLogger(__name__)
+
+# ========================================================================
+# 📝 요청 모델
+# ========================================================================
+
+class STTQueryRequest(BaseModel):
+    """STT 결과 검색 요청"""
+    query: str
+    n_results: int = 3
+
+# ========================================================================
+# 🔄 생명주기
+# ========================================================================
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,7 +29,6 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 VINUS 서버 시작...")
     
     try:
-        # CSV에서 Vector DB로 로드
         result = import_csv_to_vectordb_rag_ragDocuments("data/rag_documents.csv")
         
         if result["success"]:
@@ -36,3 +50,43 @@ app = FastAPI(
     description="음성 기반 주문 시스템",
     lifespan=lifespan
 )
+
+# ========================================================================
+# 🔍 검색 엔드포인트
+# ========================================================================
+
+@app.post("/api/v1/rag/search")
+async def search_rag(request: STTQueryRequest):
+    """STT 결과로 RAG 검색"""
+    logger.info(f"🔍 RAG 검색 요청: '{request.query}'")
+    
+    rag_service = get_rag_service_rag_service_rag_ragService()
+    result = rag_service.search_rag_service_rag_ragService(
+        query=request.query,
+        n_results=request.n_results
+    )
+    
+    return result
+
+
+@app.post("/api/v1/rag/search-with-context")
+async def search_rag_with_context(request: STTQueryRequest):
+    """STT 결과로 RAG 검색 + 컨텍스트 생성"""
+    logger.info(f"🔍 RAG 검색 (컨텍스트 포함): '{request.query}'")
+    
+    rag_service = get_rag_service_rag_service_rag_ragService()
+    result = rag_service.generate_context_rag_service_rag_ragService(
+        query=request.query,
+        n_results=request.n_results
+    )
+    
+    return result
+
+
+@app.get("/api/v1/health")
+async def health_check():
+    """헬스 체크"""
+    return {
+        "status": "healthy",
+        "service": "VINUS RAG Service"
+    }
