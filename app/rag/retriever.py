@@ -51,7 +51,7 @@ class Retriever:
         
         Example:
             retriever = Retriever()
-            result = retriever.retrieve_ret_rag_retriever(
+            result = retriever.retriever_ret_rag_retriever(
                 "에스프레소 들어간 음료",
                 n_results=3
             )
@@ -127,9 +127,9 @@ _retriever: Optional[Retriever] = None
 
 def get_retriever_ret_rag_retriever() -> Retriever:
     """Retriever 인스턴스 반환"""
-    global _retriever
+    global get_retriever_ret_rag_retriever
     
-    if _retriever is None:
-        _retriever = Retriever()
+    if get_retriever_ret_rag_retriever is None:
+        get_retriever_ret_rag_retriever = Retriever()
     
-    return _retriever
+    return get_retriever_ret_rag_retriever
