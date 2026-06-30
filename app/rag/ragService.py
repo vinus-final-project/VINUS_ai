@@ -18,7 +18,7 @@ class RagService:
         self.retriever = get_retriever_ret_rag_retriever()
         logger.info("✅ RAG Service 초기화 완료")
     
-    def search_rag_service(
+    def search_rag_ragService(
         self,
         query: str,
         n_results: int = 3
@@ -35,7 +35,7 @@ class RagService:
         
         Example:
             service = RAGService()
-            result = service.search_rag_service_rag_ragService(
+            result = service.search_rag_service(
                 "에스프레소 들어간 음료",
                 n_results=3
             )
@@ -70,7 +70,7 @@ class RagService:
                 "message": str(e)
             }
     
-    def generate_context_rag_service(
+    def generate_context_rag_ragService(
         self,
         query: str,
         n_results: int = 3
@@ -138,7 +138,7 @@ class RagService:
                 "message": str(e)
             }
     
-    def get_service_info_rag_service(self) -> Dict:
+    def get_service_info_rag_ragService(self) -> Dict:
         """RAG Service 정보 반환"""
         return {
             "service": "RAG Service",
@@ -151,7 +151,7 @@ class RagService:
 _rag_service: Optional[RagService] = None
 
 
-def get_rag_service_rag_service() -> RagService:
+def get_rag_ragService() -> RagService:
     """RAG Service 인스턴스 반환"""
     global _rag_service
     

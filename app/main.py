@@ -1,5 +1,5 @@
 from app.rag.ragDocuments import import_csv_to_vectordb_rag_ragDocuments
-from app.rag.ragService import get_rag_service_rag_service_rag_ragService
+from app.rag.ragService import get_rag_ragService
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -60,8 +60,9 @@ async def search_rag(request: STTQueryRequest):
     """STT 결과로 RAG 검색"""
     logger.info(f"🔍 RAG 검색 요청: '{request.query}'")
     
-    rag_service = get_rag_service_rag_service_rag_ragService()
-    result = rag_service.search_rag_service_rag_ragService(
+    rag_service = get_rag_ragService()
+    # ⚠️ 깨끗하게 정돈된 메서드명으로 수정 완료
+    result = rag_service.search_rag_service(
         query=request.query,
         n_results=request.n_results
     )
@@ -74,8 +75,8 @@ async def search_rag_with_context(request: STTQueryRequest):
     """STT 결과로 RAG 검색 + 컨텍스트 생성"""
     logger.info(f"🔍 RAG 검색 (컨텍스트 포함): '{request.query}'")
     
-    rag_service = get_rag_service_rag_service_rag_ragService()
-    result = rag_service.generate_context_rag_service_rag_ragService(
+    rag_service = get_rag_ragService()
+    result = rag_service.generate_context_rag_service(
         query=request.query,
         n_results=request.n_results
     )
