@@ -5,7 +5,8 @@ RAG Service - Retriever + LLM 통합 모듈
 from typing import Dict, Optional
 import logging
 
-from app.rag.retriever import get_retriever_ret_rag_retriever
+# ✅ retriever.py의 싱글톤 함수명 규칙과 동기화
+from app.rag.retriever import get_retriever
 
 logger = logging.getLogger(__name__)
 
@@ -15,31 +16,15 @@ class RagService:
     
     def __init__(self):
         """RAG Service 초기화"""
-        self.retriever = get_retriever_ret_rag_retriever()
+        self.retriever = get_retriever()
         logger.info("✅ RAG Service 초기화 완료")
     
-    def search_rag_ragService(
+    def search_rag_service(
         self,
         query: str,
         n_results: int = 3
     ) -> Dict:
-        """
-        RAG 기반 검색 (문서 검색만)
-        
-        Args:
-            query: 사용자 질문
-            n_results: 반환할 결과 개수
-        
-        Returns:
-            dict: 검색 결과
-        
-        Example:
-            service = RAGService()
-            result = service.search_rag_service(
-                "에스프레소 들어간 음료",
-                n_results=3
-            )
-        """
+        """RAG 기반 검색 (문서 검색만)"""
         try:
             logger.info(f"🔍 RAG 검색 시작: '{query}'")
             
@@ -70,30 +55,14 @@ class RagService:
                 "message": str(e)
             }
     
-    def generate_context_rag_ragService(
+    def generate_context_rag_service(
         self,
         query: str,
         n_results: int = 3
     ) -> Dict:
-        """
-        검색 결과로부터 LLM 입력용 컨텍스트 생성
-        
-        Args:
-            query: 사용자 질문
-            n_results: 검색 결과 개수
-        
-        Returns:
-            dict: LLM에 전달할 컨텍스트
-                {
-                    "success": bool,
-                    "query": str,
-                    "context": str (LLM 입력용),
-                    "documents": [...],
-                    "message": str (선택사항)
-                }
-        """
+        """검색 결과로부터 LLM 입력용 컨텍스트 생성"""
         try:
-            # 검색 실행
+            # ✅ 내부 메서드 호출 이름 일치 완료 (search_rag_service)
             search_result = self.search_rag_service(query, n_results)
             
             if not search_result["success"]:
@@ -138,7 +107,7 @@ class RagService:
                 "message": str(e)
             }
     
-    def get_service_info_rag_ragService(self) -> Dict:
+    def get_service_info_rag_service(self) -> Dict:
         """RAG Service 정보 반환"""
         return {
             "service": "RAG Service",
@@ -151,7 +120,8 @@ class RagService:
 _rag_service: Optional[RagService] = None
 
 
-def get_rag_ragService() -> RagService:
+# ✅ main.py에서 호출하는 이름(get_rag_service)과 완벽 동기화
+def get_rag_service() -> RagService:
     """RAG Service 인스턴스 반환"""
     global _rag_service
     

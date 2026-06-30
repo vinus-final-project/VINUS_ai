@@ -25,37 +25,7 @@ class Retriever:
         query: str,
         n_results: int = 3
     ) -> Dict:
-        """
-        쿼리로 유사한 메뉴 문서 검색
-        
-        Args:
-            query: 사용자 질문
-            n_results: 반환할 결과 개수
-        
-        Returns:
-            dict: 검색 결과
-                {
-                    "success": bool,
-                    "query": str,
-                    "results": [
-                        {
-                            "id": str,
-                            "menu_name": str,
-                            "document": str,
-                            "category": str,
-                            "score": float
-                        },
-                        ...
-                    ]
-                }
-        
-        Example:
-            retriever = Retriever()
-            result = retriever.retriever_ret_rag_retriever(
-                "에스프레소 들어간 음료",
-                n_results=3
-            )
-        """
+        """쿼리로 유사한 메뉴 문서 검색"""
         try:
             logger.info(f"🔍 검색 시작: '{query}'")
             
@@ -82,7 +52,6 @@ class Retriever:
             results = []
             if chroma_data["ids"] and len(chroma_data["ids"]) > 0:
                 for idx, doc_id in enumerate(chroma_data["ids"][0]):
-                    # 거리를 유사도 점수로 변환 (0~1, 1이 가장 유사)
                     distance = chroma_data["distances"][0][idx]
                     similarity_score = 1 - distance  # Cosine distance → similarity
                     
@@ -91,7 +60,7 @@ class Retriever:
                         "menu_name": chroma_data["metadatas"][0][idx].get("menu_name"),
                         "category": chroma_data["metadatas"][0][idx].get("category"),
                         "document": chroma_data["documents"][0][idx],
-                        "score": round(similarity_score, 4)  # 소수점 4자리
+                        "score": round(similarity_score, 4)
                     })
             
             logger.info(f"✅ 검색 완료: {len(results)}개 결과")
@@ -121,15 +90,16 @@ class Retriever:
         }
 
 
-# 싱글톤 패턴
+# 싱글톤 패턴 변수
 _retriever: Optional[Retriever] = None
 
 
-def get_retriever_ret_rag_retriever() -> Retriever:
+# ✅ 싱글톤 함수 버그 수정 및 가독성을 위한 함수명 정돈
+def get_retriever() -> Retriever:
     """Retriever 인스턴스 반환"""
-    global get_retriever_ret_rag_retriever
+    global _retriever
     
-    if get_retriever_ret_rag_retriever is None:
-        get_retriever_ret_rag_retriever = Retriever()
+    if _retriever is None:
+        _retriever = Retriever()
     
-    return get_retriever_ret_rag_retriever
+    return _retriever
