@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class STTQueryRequest(BaseModel):
     """STT 결과 검색 요청"""
     query: str
-    n_results: int = 3
+    n_results: int = 
 
 # ========================================================================
 # 🔄 생명주기
