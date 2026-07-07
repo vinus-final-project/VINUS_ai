@@ -28,7 +28,7 @@ class Embedding:
         
         try:
             logger.info(f"📥 임베딩 모델 로드 중: {self.model_name}...")
-            self.model = SentenceTransformer(self.model_name)
+            self.model = SentenceTransformer(self.model_name, device='cpu')
             logger.info(f"✅ 모델 로드 완료: {self.model_name}")
             logger.info(f"💡 프리픽스 설정: query='{self.query_prefix}', passage='{self.passage_prefix}'")
         
@@ -55,7 +55,7 @@ class Embedding:
             
             embeddings = self.model.encode(
                 prefixed_queries,
-                convert_to_numpy=False
+                convert_to_numpy=True
             )
             
             if single:
@@ -86,7 +86,8 @@ class Embedding:
             
             embeddings = self.model.encode(
                 prefixed_docs,
-                convert_to_numpy=False
+                convert_to_numpy=True
+
             )
             
             if single:

@@ -1,10 +1,10 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+from llama_cpp import Llama
 from app.core.config import settings
-from app.interface.dto.llmRequest import LLMRequest, SessionState
+from app.interface.dto.llmRequest import SessionState
 from app.interface.dto.llmResult import LLMResult
 from app.llm.promptBuilder import build_prompt_promptBuilder
 from app.llm.outputParser import parse_llm_output_outputParser
+from app.interface.dto.llmRequest import LLMRequest
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,28 +12,29 @@ logger = logging.getLogger(__name__)
 
 class LLMService:
 
-    _tokenizer = None
-    _model = None
+    
+    _model: Llama = None
 
     # ------------------------------------------------------------------
     # 모델 초기화 (서버 시작 시 1회 호출)
     # ------------------------------------------------------------------
     @classmethod
     def initialize_llmService(cls) -> None:
-        """EXAONE 모델 로드 (서버 시작 시 1회)"""
+        """EXAONE GGUF 모델 로드 (서버 시작 시 1회)"""
         if cls._model is not None:
             logger.info("LLM 모델 이미 로드됨 (스킵)")
             return
 
-        logger.info(f"LLM 모델 로드 시작: {settings.llm_model_name}")
+        logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
 
-        cls._tokenizer = AutoTokenizer.from_pretrained(settings.llm_model_name)
-        cls._model = AutoModelForCausalLM.from_pretrained(
-            settings.llm_model_name,
-            torch_dtype=torch.float16,   # fp16으로 로드
-            device_map="auto",           # GPU 자동 할당
+        
+        cls._model = Llama(
+            model_path=settings.llm_model_path,
+            n_ctx=3072,          # 컨텍스트 길이
+            n_gpu_layers=35,      # 테스트용 CPU (EC2 배포 시 -1로 변경)
+            verbose=False,
         )
-        cls._model.eval()
+        
         logger.info("LLM 모델 로드 완료")
 
     # ------------------------------------------------------------------
@@ -58,35 +59,21 @@ class LLMService:
             )
 
         # 1. 프롬프트 생성
-        from app.interface.dto.llmRequest import LLMRequest
+        
         request = LLMRequest(session=session, query=query, context=context)
         messages = build_prompt_promptBuilder(request)
         logger.info(f"프롬프트 생성 완료 | query: {query}")
 
-        # 2. 토크나이징
-        inputs = cls._tokenizer.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_tensors="pt"
-        ).to(cls._model.device)
-
-        # 3. EXAONE 호출
-        with torch.no_grad():
-            outputs = cls._model.generate(
-                inputs,
-                max_new_tokens=settings.llm_max_tokens,
-                temperature=settings.llm_temperature,
-                do_sample=True,
-                pad_token_id=cls._tokenizer.eos_token_id,
-            )
-
-        # 4. 출력 디코딩 (입력 토큰 제외)
-        raw_output = cls._tokenizer.decode(
-            outputs[0][inputs.shape[-1]:],
-            skip_special_tokens=True
+        # 2. EXAONE GGUF 호출
+        response = cls._model.create_chat_completion(
+            messages=messages,
+            max_tokens=settings.llm_max_tokens,
+            temperature=settings.llm_temperature,
         )
+
+        # 3. 출력 추출
+        raw_output = response["choices"][0]["message"]["content"]
         logger.info(f"EXAONE 출력: {raw_output}")
 
-        # 5. 파싱 → LLMResult 반환
+        # 4. 파싱 → LLMResult 반환
         return parse_llm_output_outputParser(raw_output)

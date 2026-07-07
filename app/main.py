@@ -3,7 +3,7 @@ from app.rag.ragService import get_rag_ragService
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.core.config import settings
+from app.core.config import Settings
 from app.llm.llmService import LLMService
 import logging
 from app.interface.routers.llmRouter import router as llm_router
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class STTQueryRequest(BaseModel):
     """STT 결과 검색 요청"""
     query: str
-    n_results: int = 5
+    n_results: int = 3
 
 # ========================================================================
 # 🔄 생명주기
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 앱 생성
 app = FastAPI(
-    title=settings.app_name,
+    title=Settings().app_name,
     description="음성 기반 주문 시스템",
     lifespan=lifespan
 )
@@ -98,9 +98,9 @@ async def health_check():
     """헬스 체크"""
     return {
         "status": "healthy",
-        "service": settings.app_name
+        "service": Settings().app_name
     }
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host=settings.app_host, port=settings.app_port, reload=True)
+    uvicorn.run("app.main:app", host=Settings().app_host, port=Settings().app_port, reload=True)
 
