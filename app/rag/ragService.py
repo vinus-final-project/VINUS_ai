@@ -121,7 +121,7 @@ _rag_service: Optional[RagService] = None
 
 
 # ✅ main.py에서 호출하는 이름(get_rag_service)과 완벽 동기화
-def get_rag_service() -> RagService:
+def get_rag_ragService() -> RagService:
     """RAG Service 인스턴스 반환"""
     global _rag_service
     

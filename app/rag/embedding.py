@@ -6,32 +6,30 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Union
 import logging
 
+from app.core.config import settings  # ← 추가!
+
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingModel:
+class Embedding:
     """임베딩 모델 관리 클래스 - Multilingual-E5-Large"""
     
-    def __init__(self, model_name: str = "intfloat/multilingual-e5-large"):
+    def __init__(self, model_name: str = None):
         """
         임베딩 모델 초기화
         
         Args:
-            model_name: 사용할 모델명
-                - "intfloat/multilingual-e5-large" (권장)
-        
-        주의: Multilingual-E5-Large는 프리픽스가 필수입니다!
-        - 쿼리: "query: " 프리픽스 추가
-        - 문서: "passage: " 프리픽스 추가
+            model_name: 사용할 모델명 (None이면 config에서 가져옴)
         """
-        self.model_name = model_name
-        self.query_prefix = "query: "      # 쿼리용 프리픽스
-        self.passage_prefix = "passage: "  # 문서용 프리픽스
+        # ✅ config에서 모델명 가져옴
+        self.model_name = model_name or settings.embedding_model_name
+        self.query_prefix = "query: "
+        self.passage_prefix = "passage: "
         
         try:
-            logger.info(f"📥 임베딩 모델 로드 중: {model_name}...")
-            self.model = SentenceTransformer(model_name)
-            logger.info(f"✅ 모델 로드 완료: {model_name}")
+            logger.info(f"📥 임베딩 모델 로드 중: {self.model_name}...")
+            self.model = SentenceTransformer(self.model_name)
+            logger.info(f"✅ 모델 로드 완료: {self.model_name}")
             logger.info(f"💡 프리픽스 설정: query='{self.query_prefix}', passage='{self.passage_prefix}'")
         
         except Exception as e:
@@ -42,30 +40,8 @@ class EmbeddingModel:
         self,
         query: Union[str, List[str]]
     ) -> Union[List[float], List[List[float]]]:
-        """
-        쿼리 텍스트를 임베딩 벡터로 변환
-        
-        Args:
-            query: 쿼리 텍스트 또는 텍스트 리스트
-        
-        Returns:
-            임베딩 벡터 또는 벡터 리스트
-        
-        Note:
-            Multilingual-E5-Large는 쿼리에 "query: " 프리픽스가 필요합니다!
-        
-        Example:
-            # 단일 쿼리
-            embedding = model.embed_query_em_rag_embedding("아메리카노")
-            # 내부: "query: 아메리카노" 로 임베딩됨
-            
-            # 여러 쿼리
-            embeddings = model.embed_query_em_rag_embedding(
-                ["아메리카노", "카페라떼"]
-            )
-        """
+        """쿼리 텍스트를 임베딩 벡터로 변환"""
         try:
-            # 단일 문자열인 경우 리스트로 변환
             if isinstance(query, str):
                 query_list = [query]
                 single = True
@@ -73,20 +49,15 @@ class EmbeddingModel:
                 query_list = query
                 single = False
             
-            # ✅ 쿼리에 프리픽스 추가 (E5-Large 필수!)
             prefixed_queries = [f"{self.query_prefix}{q}" for q in query_list]
             
             logger.debug(f"🔄 쿼리 임베딩 중: {len(query_list)}개...")
-            logger.debug(f"  원본: {query_list[0]}")
-            logger.debug(f"  변환: {prefixed_queries[0]}")
             
-            # 임베딩 생성
             embeddings = self.model.encode(
                 prefixed_queries,
-                convert_to_numpy=False  # 리스트로 반환
+                convert_to_numpy=False
             )
             
-            # 단일 쿼리인 경우 첫 번째 요소만 반환
             if single:
                 return embeddings[0]
             else:
@@ -100,25 +71,8 @@ class EmbeddingModel:
         self,
         documents: Union[str, List[str]]
     ) -> Union[List[float], List[List[float]]]:
-        """
-        문서 텍스트를 임베딩 벡터로 변환
-        
-        Args:
-            documents: 문서 텍스트 또는 문서 리스트
-        
-        Returns:
-            임베딩 벡터 또는 벡터 리스트
-        
-        Note:
-            Multilingual-E5-Large는 문서에 "passage: " 프리픽스가 필요합니다!
-        
-        Example:
-            # 단일 문서
-            embedding = model.embed_documents_em_rag_embedding("메뉴명: 아메리카노...")
-            # 내부: "passage: 메뉴명: 아메리카노..." 로 임베딩됨
-        """
+        """문서 텍스트를 임베딩 벡터로 변환"""
         try:
-            # 단일 문자열인 경우 리스트로 변환
             if isinstance(documents, str):
                 doc_list = [documents]
                 single = True
@@ -126,18 +80,15 @@ class EmbeddingModel:
                 doc_list = documents
                 single = False
             
-            # ✅ 문서에 프리픽스 추가 (E5-Large 필수!)
             prefixed_docs = [f"{self.passage_prefix}{doc}" for doc in doc_list]
             
             logger.debug(f"🔄 문서 임베딩 중: {len(doc_list)}개...")
             
-            # 임베딩 생성
             embeddings = self.model.encode(
                 prefixed_docs,
-                convert_to_numpy=False  # 리스트로 반환
+                convert_to_numpy=False
             )
             
-            # 단일 문서인 경우 첫 번째 요소만 반환
             if single:
                 return embeddings[0]
             else:
@@ -158,15 +109,15 @@ class EmbeddingModel:
         }
 
 
-# 싱글톤 패턴 (앱 시작 시 한 번만 로드)
-_embedding_model: EmbeddingModel = None
+# 싱글톤 패턴
+_embedding_model: Embedding = None
 
 
-def get_embedding_model_em_rag_embedding() -> EmbeddingModel:
+def get_embedding_model_em_rag_embedding() -> Embedding:
     """임베딩 모델 인스턴스 반환"""
     global _embedding_model
     
     if _embedding_model is None:
-        _embedding_model = EmbeddingModel(model_name="intfloat/multilingual-e5-large")
+        _embedding_model = Embedding()  # ✅ config에서 자동 읽음
     
     return _embedding_model
