@@ -41,11 +41,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ RAG 로드 오류: {str(e)}")
     
-    try:
-        LLMService.initialize_llmService()
-        logger.info("✅ LLM 모델 로드 완료")
-    except Exception as e:
-        logger.error(f"❌ LLM 로드 오류: {str(e)}")
+    # try:
+    #    LLMService.initialize_llmService()
+    #    logger.info("✅ LLM 모델 로드 완료")
+    # except Exception as e:
+    #    logger.error(f"❌ LLM 로드 오류: {str(e)}")
     yield
     
     # ✅ Shutdown
@@ -62,7 +62,7 @@ app = FastAPI(
 # 🔍 검색 엔드포인트
 # ========================================================================
 # TODO: llmService 구현 완료 후 주석 해제
-app.include_router(llm_router, tags=["llm"])
+# app.include_router(llm_router, tags=["llm"])
 
 @app.post("/api/v1/rag/search")
 async def search_rag(request: STTQueryRequest):
