@@ -27,11 +27,15 @@ class LLMService:
 
         logger.info(f"LLM 모델 로드 시작: {settings.llm_model_name}")
 
-        cls._tokenizer = AutoTokenizer.from_pretrained(settings.llm_model_name)
+        cls._tokenizer = AutoTokenizer.from_pretrained(
+            settings.llm_model_name,
+            trust_remote_code=True
+            )
         cls._model = AutoModelForCausalLM.from_pretrained(
             settings.llm_model_name,
             torch_dtype=torch.float16,   # fp16으로 로드
-            device_map="auto",           # GPU 자동 할당
+            device_map="auto",
+            trust_remote_code=True                      # GPU 자동 할당
         )
         cls._model.eval()
         logger.info("LLM 모델 로드 완료")

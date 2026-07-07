@@ -57,6 +57,11 @@ class Embedding:
                 prefixed_queries,
                 convert_to_numpy=False
             )
+            # 🌟 [추가] 만약 결과가 PyTorch 텐서 리스트라면 순수 파이썬 리스트로 변환합니다.
+            if isinstance(embeddings, list):
+                embeddings = [t.tolist() if hasattr(t, "tolist") else t for t in embeddings]
+            elif hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
             
             if single:
                 return embeddings[0]
@@ -88,6 +93,12 @@ class Embedding:
                 prefixed_docs,
                 convert_to_numpy=False
             )
+            
+            # 🌟 [추가] 만약 결과가 PyTorch 텐서 리스트라면 순수 파이썬 리스트로 변환합니다.
+            if isinstance(embeddings, list):
+                embeddings = [t.tolist() if hasattr(t, "tolist") else t for t in embeddings]
+            elif hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
             
             if single:
                 return embeddings[0]
