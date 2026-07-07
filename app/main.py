@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.llm.llmService import LLMService
 import logging
-# from app.interface.routers.llmRouter import router as llm_router
+from app.interface.routers.llmRouter import router as llm_router
 # ✅ 로거 설정
 logger = logging.getLogger(__name__)
 
