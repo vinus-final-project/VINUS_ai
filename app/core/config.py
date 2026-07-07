@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     chroma_db_path: Path = Path("./rag_db")  # RAG 담당자 ChromaDB 데이터베이스 파일 경로
     chroma_collection_name: str = "vinus_menus"
 
+    # 🌟 추가된 부분: RAG에서 사용할 CSV 파일 경로를 지정합니다.
+    rag_documents_csv_path: Path = Path("data/rag_documents.csv")
+    
     # Embedding 설정
     embedding_model_name: str = "intfloat/multilingual-e5-large"
 
