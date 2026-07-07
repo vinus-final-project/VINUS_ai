@@ -3,8 +3,10 @@ from app.rag.ragService import get_rag_ragService
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
+from app.core.config import settings
+from app.llm.llmService import LLMService
 import logging
-
+# from app.interface.routers.llmRouter import router as llm_router
 # ✅ 로거 설정
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ RAG 로드 오류: {str(e)}")
     
+    try:
+        LLMService.initialize_llmService()
+        logger.info("✅ LLM 모델 로드 완료")
+    except Exception as e:
+        logger.error(f"❌ LLM 로드 오류: {str(e)}")
     yield
     
     # ✅ Shutdown
@@ -46,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 앱 생성
 app = FastAPI(
-    title="VINUS",
+    title=settings.app_name,
     description="음성 기반 주문 시스템",
     lifespan=lifespan
 )
@@ -54,6 +61,8 @@ app = FastAPI(
 # ========================================================================
 # 🔍 검색 엔드포인트
 # ========================================================================
+# TODO: llmService 구현 완료 후 주석 해제
+app.include_router(llm_router, tags=["llm"])
 
 @app.post("/api/v1/rag/search")
 async def search_rag(request: STTQueryRequest):
@@ -89,5 +98,9 @@ async def health_check():
     """헬스 체크"""
     return {
         "status": "healthy",
-        "service": "VINUS RAG Service"
+        "service": settings.app_name
     }
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host=settings.app_host, port=settings.app_port, reload=True)
+
