@@ -31,7 +31,7 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
 
         # TODO: llmService 구현 완료 후 주석 해제
        
-        result = await LLMService.generate_result(
+        result = LLMService.generate_result(
             session=request.session,
             query=request.query,
             context=request.context,

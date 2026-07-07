@@ -7,3 +7,6 @@ torch
 pydantic-settings
 transformers
 accelerate
+chromadb
+pandas
+llama-cpp-python
