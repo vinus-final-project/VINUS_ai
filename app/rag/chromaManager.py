@@ -4,7 +4,10 @@ Chroma Vector DB 관리 모듈
 
 import chromadb
 from typing import List, Dict, Optional
+from pathlib import Path
 import logging
+
+from app.core.config import settings  # ← 추가!
 
 logger = logging.getLogger(__name__)
 
@@ -12,19 +15,29 @@ logger = logging.getLogger(__name__)
 class ChromaManager:
     """Vector DB (Chroma) 관리 클래스"""
     
-    def __init__(self, db_path: str = "./rag_db"):
+    def __init__(self, db_path: Path = None):
         """
         Chroma 클라이언트 초기화
         
         Args:
-            db_path: Vector DB 저장 경로
+            db_path: Vector DB 저장 경로 (Path 객체 또는 문자열)
         """
-        self.db_path = db_path
-        self.client = chromadb.PersistentClient(path=db_path)
+        # ✅ Path 객체로 변환
+        if db_path is None:
+            self.db_path = settings.chroma_db_path
+        elif isinstance(db_path, str):
+            self.db_path = Path(db_path)
+        else:
+            self.db_path = db_path
+        
+        self.collection_name = settings.chroma_collection_name
+        
+        # ✅ str로 명시적 변환
+        self.client = chromadb.PersistentClient(path=str(self.db_path))
         self.collection = self.client.get_or_create_collection(
-            name="menu_collection"
+            name=self.collection_name
         )
-        logger.info(f"✅ Chroma 클라이언트 초기화 완료: {db_path}")
+        logger.info(f"✅ Chroma 클라이언트 초기화 완료: {self.db_path}")
     
     def search_cm_rag_chromaManager(
         self,
@@ -40,12 +53,6 @@ class ChromaManager:
         
         Returns:
             dict: 검색 결과
-                {
-                    "ids": [...],
-                    "documents": [...],
-                    "metadatas": [...],
-                    "distances": [...]
-                }
         """
         try:
             results = self.collection.query(
@@ -80,7 +87,8 @@ class ChromaManager:
             return {
                 "success": True,
                 "count": count,
-                "collection_name": "menu_collection"
+                "collection_name": "menu_collection",
+                "db_path": str(self.db_path)  # ✅ Path → str 변환
             }
         
         except Exception as e:
