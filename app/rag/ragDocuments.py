@@ -58,29 +58,23 @@ def import_csv_to_vectordb_rag_ragDocuments(csv_path: Path = None):
             name=Settings.chroma_collection_name
         )
         
-        # [4] CSV 데이터를 임베딩한 후 Vector DB에 로드
+        # [4] CSV 데이터를 임베딩한 후 Vector DB에 로드 (배치 처리로 변경)
         print(f"\n💾 {len(df)}개 문서를 임베딩 후 Vector DB에 로드 중...")
         
-        ids = []
-        documents = []
-        embeddings = []
-        metadatas = []
-        
-        for idx, row in df.iterrows():
-            doc_text = row['document']
-            doc_embedding = embedding_model.embed_documents_em_rag_embedding(doc_text)
-            
-            ids.append(row['doc_id'])
-            documents.append(doc_text)
-            embeddings.append(doc_embedding)
-            metadatas.append({
+        ids = df['doc_id'].tolist()                 # ← 수정: for문 없이 컬럼 전체를 리스트로 한 번에 추출
+        documents = df['document'].tolist()          # ← 수정: 위와 동일
+        metadatas = [                                 # ← 수정: 리스트 컴프리헨션으로 한 번에 생성
+            {
                 "menu_id": row['menu_id'],
                 "menu_name": row['menu_name'],
                 "category": row['category']
-            })
-            
-            if (idx + 1) % 10 == 0:
-                print(f"  ├─ {idx + 1}/{len(df)} 임베딩 완료...")
+            }
+            for _, row in df.iterrows()
+        ]
+        
+        print(f"🤖 {len(documents)}개 문서 배치 임베딩 중...")
+        embeddings = embedding_model.embed_documents_em_rag_embedding(documents)  # ← 수정: for문으로 1개씩 호출하던 것 → 리스트 전체를 한 번에 호출
+        print(f"✅ 배치 임베딩 완료")
         
         collection.add(
             ids=ids,
