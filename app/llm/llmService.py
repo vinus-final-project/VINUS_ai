@@ -1,5 +1,5 @@
 from llama_cpp import Llama
-from app.core.config import settings
+from app.core.config import Settings
 from app.interface.dto.llmRequest import SessionState
 from app.interface.dto.llmResult import LLMResult
 from app.llm.promptBuilder import build_prompt_promptBuilder
@@ -25,11 +25,11 @@ class LLMService:
             logger.info("LLM 모델 이미 로드됨 (스킵)")
             return
 
-        logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
+        logger.info(f"LLM 모델 로드 시작: {Settings.llm_model_path}")
 
         
         cls._model = Llama(
-            model_path=settings.llm_model_path,
+            model_path=Settings.llm_model_path,
             n_ctx=3072,          # 컨텍스트 길이
             n_gpu_layers=35,      # 테스트용 CPU (EC2 배포 시 -1로 변경)
             verbose=False,
@@ -67,8 +67,8 @@ class LLMService:
         # 2. EXAONE GGUF 호출
         response = cls._model.create_chat_completion(
             messages=messages,
-            max_tokens=settings.llm_max_tokens,
-            temperature=settings.llm_temperature,
+            max_tokens=Settings.llm_max_tokens,
+            temperature=Settings.llm_temperature,
         )
 
         # 3. 출력 추출

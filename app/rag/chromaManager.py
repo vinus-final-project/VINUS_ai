@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 from pathlib import Path
 import logging
 
-from app.core.config import settings  # ← 추가!
+from app.core.config import Settings  # ← 추가!
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +24,19 @@ class ChromaManager:
         """
         # ✅ Path 객체로 변환
         if db_path is None:
-            self.db_path = settings.chroma_db_path
+            self.db_path = Settings.chroma_db_path
         elif isinstance(db_path, str):
             self.db_path = Path(db_path)
         else:
             self.db_path = db_path
         
-        self.collection_name = settings.chroma_collection_name
+        self.collection_name = Settings.chroma_collection_name
         
         # ✅ str로 명시적 변환
         self.client = chromadb.PersistentClient(path=str(self.db_path))
         self.collection = self.client.get_or_create_collection(
-            name=self.collection_name
+            name=self.collection_name,
+            metadata={"hnsw:space": "cosine"}  # ← 추가: 코사인 거리로 명시 지정 (기본값 L2 대신)
         )
         logger.info(f"✅ Chroma 클라이언트 초기화 완료: {self.db_path}")
     
@@ -87,7 +88,7 @@ class ChromaManager:
             return {
                 "success": True,
                 "count": count,
-                "collection_name": "menu_collection",
+                "collection_name": self.collection_name,  # ← 수정: 하드코딩된 "menu_collection" → self.collection_name ("vinus_menus")
                 "db_path": str(self.db_path)  # ✅ Path → str 변환
             }
         
