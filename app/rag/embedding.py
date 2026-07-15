@@ -6,8 +6,9 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Union
 import logging
 
-from app.core.config import settings  # ← 추가!
+from app.core.config import Settings  # ← 추가!
 
+settings = Settings()
 logger = logging.getLogger(__name__)
 
 

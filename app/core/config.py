@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     app_port: int = 8001 # 이건 FastAPI 서버가 실행될 포트 번호 (백엔드가 8000번에서 실행하면 충돌 방지를 위해 8001번으로 설정)
 
     # LLM 설정
-    llm_model_path: str = "./models/EXAONE-3.5-2.4B-Instruct-Q4_K_M.gguf"  # GGUF 파일 경로 (테스트용)
+    llm_model_path: str = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
     llm_max_tokens: int = 512
     llm_temperature: float = 0.7
 

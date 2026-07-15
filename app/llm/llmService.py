@@ -1,4 +1,5 @@
-from llama_cpp import Llama
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from app.core.config import settings
 from app.interface.dto.llmRequest import SessionState
 from app.interface.dto.llmResult import LLMResult
@@ -12,29 +13,34 @@ logger = logging.getLogger(__name__)
 
 class LLMService:
 
-    
-    _model: Llama = None
+    _model = None
+    _tokenizer = None
 
     # ------------------------------------------------------------------
     # 모델 초기화 (서버 시작 시 1회 호출)
     # ------------------------------------------------------------------
     @classmethod
     def initialize_llmService(cls) -> None:
-        """EXAONE GGUF 모델 로드 (서버 시작 시 1회)"""
+        """EXAONE 원본 모델 로드 (서버 시작 시 1회)"""
         if cls._model is not None:
             logger.info("LLM 모델 이미 로드됨 (스킵)")
             return
 
         logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
 
-        
-        cls._model = Llama(
-            model_path=settings.llm_model_path,
-            n_ctx=3072,          # 컨텍스트 길이
-            n_gpu_layers=35,      # 테스트용 CPU (EC2 배포 시 -1로 변경)
-            verbose=False,
+        cls._tokenizer = AutoTokenizer.from_pretrained(
+            settings.llm_model_path,
+            trust_remote_code=True,
         )
-        
+
+        cls._model = AutoModelForCausalLM.from_pretrained(
+            settings.llm_model_path,
+            torch_dtype=torch.float16,
+            device_map="cuda",
+            trust_remote_code=True,
+        )
+        cls._model.eval()
+
         logger.info("LLM 모델 로드 완료")
 
     # ------------------------------------------------------------------
@@ -59,21 +65,32 @@ class LLMService:
             )
 
         # 1. 프롬프트 생성
-        
         request = LLMRequest(session=session, query=query, context=context)
         messages = build_prompt_promptBuilder(request)
         logger.info(f"프롬프트 생성 완료 | query: {query}")
 
-        # 2. EXAONE GGUF 호출
-        response = cls._model.create_chat_completion(
-            messages=messages,
-            max_tokens=settings.llm_max_tokens,
-            temperature=settings.llm_temperature,
-        )
+        # 2. 토크나이즈
+        input_ids = cls._tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        ).to("cuda")
 
-        # 3. 출력 추출
-        raw_output = response["choices"][0]["message"]["content"]
+        # 3. 생성
+        with torch.no_grad():
+            output_ids = cls._model.generate(
+                input_ids,
+                max_new_tokens=settings.llm_max_tokens,
+                temperature=settings.llm_temperature,
+                do_sample=True,
+                eos_token_id=cls._tokenizer.eos_token_id,
+            )
+
+        # 4. 디코딩
+        generated = output_ids[0][input_ids.shape[-1]:]
+        raw_output = cls._tokenizer.decode(generated, skip_special_tokens=True)
         logger.info(f"EXAONE 출력: {raw_output}")
 
-        # 4. 파싱 → LLMResult 반환
+        # 5. 파싱 → LLMResult 반환
         return parse_llm_output_outputParser(raw_output)
