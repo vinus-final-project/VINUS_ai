@@ -26,7 +26,7 @@ class LLMService:
             logger.info("LLM 모델 이미 로드됨 (스킵)")
             return
 
-        logger.info(f"LLM 모델 로드 시작: {Settings.llm_model_path}")
+        logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
 
         cls._tokenizer = AutoTokenizer.from_pretrained(
             settings.llm_model_path,
