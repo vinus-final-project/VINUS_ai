@@ -9,6 +9,7 @@ import torch  # ← 추가: GPU 사용 가능 여부 체크용
 
 from app.core.config import Settings  # ← 추가!
 
+settings = Settings()
 logger = logging.getLogger(__name__)
 
 

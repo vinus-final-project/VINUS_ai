@@ -11,7 +11,7 @@ class Settings:
     app_port: int = 8001
 
     # LLM 설정
-    llm_model_path: str = "./models/EXAONE-3.5-2.4B-Instruct-Q4_K_M.gguf"  # GGUF 파일 경로 (테스트용)
+    llm_model_path: str = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
     llm_max_tokens: int = 512
     llm_temperature: float = 0.7
 
