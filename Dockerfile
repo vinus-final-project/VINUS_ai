@@ -1,9 +1,10 @@
-# Python 3.10 slim 기반
-FROM python:3.10-slim
+# 기존 python:3.10-slim 대신 3.11-slim 으로 변경
+FROM python:3.11-slim
 
-# 1. AI 및 C++ 컴파일에 필요한 기본 시스템 패키지 일괄 설치
+# C/C++ 컴파일 및 패키지 빌드용 필수 시스템 패키지 설치
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    cmake \
     gcc \
     g++ \
     curl \
@@ -12,12 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 2. pip, setuptools, wheel 최신 버전으로 업그레이드
 COPY requirements.txt /app/requirements.txt
+
+# pip 업그레이드 및 라이브러리 설치
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# 3. 소스 코드 복사
 COPY . /app
 
 EXPOSE 8001
