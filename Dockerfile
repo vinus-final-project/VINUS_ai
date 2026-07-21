@@ -1,26 +1,32 @@
-# 기존 python:3.10-slim 대신 3.11-slim 으로 변경
-FROM python:3.11-slim
+FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 
-# C/C++ 컴파일 및 패키지 빌드용 필수 시스템 패키지 설치
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    gcc \
-    g++ \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt .
 
-# pip 업그레이드 및 라이브러리 설치
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    torch==2.11.0 \
+    --index-url https://download.pytorch.org/whl/cu128 \
+    && pip cache purge
 
-COPY . /app
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip cache purge
+
+COPY . .
 
 EXPOSE 8001
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
