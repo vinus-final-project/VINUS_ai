@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, HTTPException
 from app.interface.dto.llmRequest import LLMRequest
 from app.interface.dto.llmResult import LLMResult
@@ -17,9 +18,10 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
     logger.info(f"LLM 요청 수신 | session_id: {request.session.se_id} | query: {request.query}")
 
     try:
-        # 1. RAG 검색 → context 생성
+        # 1. RAG 검색 → context 생성 (동기 함수라 스레드풀에서 실행)
         rag_service = get_rag_ragService()
-        rag_result = rag_service.generate_context_rag_service(
+        rag_result = await asyncio.to_thread(
+            rag_service.generate_context_rag_service,
             query=request.query,
             n_results=5
         )
@@ -29,17 +31,15 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
         # 2. context 채워서 LLMRequest 업데이트
         request.context = context
 
-        # TODO: llmService 구현 완료 후 주석 해제
-       
-        result = LLMService.generate_result(
+        # 3. LLM 추론도 스레드풀에서 실행 (GPU 연산, 무거운 작업)
+        result = await asyncio.to_thread(
+            LLMService.generate_result,
             session=request.session,
             query=request.query,
             context=request.context,
         )
         return result
 
-        
-
     except Exception as e:
-        logger.error(f"LLM 처리 오류: {str(e)}")
+        logger.error(f"LLM 처리 오류: {str(e)} | 타입: {type(e).__name__}")
         raise HTTPException(status_code=500, detail=str(e))
