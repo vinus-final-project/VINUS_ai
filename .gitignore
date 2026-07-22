@@ -2,4 +2,6 @@ venv/
 .venv/
 .env
 __pycache__/
-models/
+models/models/*.gguf
+models/*.gguf
+models/*.gguf

@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from app.core.config import settings
+from app.core.config import Settings
 from app.interface.dto.llmRequest import SessionState
 from app.interface.dto.llmResult import LLMResult
 from app.llm.promptBuilder import build_prompt_promptBuilder
@@ -26,15 +26,15 @@ class LLMService:
             logger.info("LLM 모델 이미 로드됨 (스킵)")
             return
 
-        logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
+        logger.info(f"LLM 모델 로드 시작: {Settings.llm_model_path}")
 
         cls._tokenizer = AutoTokenizer.from_pretrained(
-            settings.llm_model_path,
+            Settings.llm_model_path,
             trust_remote_code=True,
         )
 
         cls._model = AutoModelForCausalLM.from_pretrained(
-            settings.llm_model_path,
+            Settings.llm_model_path,
             torch_dtype=torch.float16,
             device_map="cuda",
             trust_remote_code=True,
@@ -81,8 +81,8 @@ class LLMService:
         with torch.no_grad():
             output_ids = cls._model.generate(
                 input_ids,
-                max_new_tokens=settings.llm_max_tokens,
-                temperature=settings.llm_temperature,
+                max_new_tokens=Settings.llm_max_tokens,
+                temperature=Settings.llm_temperature,
                 do_sample=True,
                 eos_token_id=cls._tokenizer.eos_token_id,
             )

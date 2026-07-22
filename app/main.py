@@ -38,14 +38,19 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning(f"⚠️ RAG 초기화 실패: {result['message']}")
     
+    except RuntimeError as e:
+        # ← 추가: GPU 필수 환경인데 GPU가 없는 경우, 서버 기동 자체를 중단시킴
+        logger.critical(f"🚫 서버 기동 중단: {str(e)}")
+        raise  # lifespan에서 raise하면 FastAPI가 startup을 완료하지 못하고 서버가 뜨지 않음
+    
     except Exception as e:
         logger.error(f"❌ RAG 로드 오류: {str(e)}")
     
     try:
-        LLMService.initialize_llmService()
-        logger.info("✅ LLM 모델 로드 완료")
+       LLMService.initialize_llmService()
+       logger.info("✅ LLM 모델 로드 완료")
     except Exception as e:
-        logger.error(f"❌ LLM 로드 오류: {str(e)}")
+       logger.error(f"❌ LLM 로드 오류: {str(e)}")
     yield
     
     # ✅ Shutdown

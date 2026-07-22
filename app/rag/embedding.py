@@ -5,6 +5,7 @@
 from sentence_transformers import SentenceTransformer
 from typing import List, Union
 import logging
+import torch  # ← 추가: GPU 사용 가능 여부 체크용
 
 from app.core.config import Settings  # ← 추가!
 
@@ -23,13 +24,16 @@ class Embedding:
             model_name: 사용할 모델명 (None이면 config에서 가져옴)
         """
         # ✅ config에서 모델명 가져옴
-        self.model_name = model_name or settings.embedding_model_name
+        self.model_name = model_name or Settings.embedding_model_name
         self.query_prefix = "query: "
         self.passage_prefix = "passage: "
         
         try:
-            logger.info(f"📥 임베딩 모델 로드 중: {self.model_name}...")
-            self.model = SentenceTransformer(self.model_name, device='cpu')
+            if not torch.cuda.is_available():  # ← 추가: GPU 없으면 명확히 실패
+                raise RuntimeError("GPU(CUDA)를 사용할 수 없는 환경입니다. CUDA 드라이버/PyTorch 설치를 확인하세요.")
+            
+            logger.info(f"📥 임베딩 모델 로드 중: {self.model_name}... (device=cuda)")
+            self.model = SentenceTransformer(self.model_name, device="cuda")  # ← 'cpu' → 'cuda' 고정
             logger.info(f"✅ 모델 로드 완료: {self.model_name}")
             logger.info(f"💡 프리픽스 설정: query='{self.query_prefix}', passage='{self.passage_prefix}'")
         
@@ -58,6 +62,11 @@ class Embedding:
                 prefixed_queries,
                 convert_to_numpy=True
             )
+            # 🌟 [추가] 만약 결과가 PyTorch 텐서 리스트라면 순수 파이썬 리스트로 변환합니다.
+            if isinstance(embeddings, list):
+                embeddings = [t.tolist() if hasattr(t, "tolist") else t for t in embeddings]
+            elif hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
             
             if single:
                 return embeddings[0]
@@ -88,8 +97,13 @@ class Embedding:
             embeddings = self.model.encode(
                 prefixed_docs,
                 convert_to_numpy=True
-
             )
+            
+            # 🌟 [추가] 만약 결과가 PyTorch 텐서 리스트라면 순수 파이썬 리스트로 변환합니다.
+            if isinstance(embeddings, list):
+                embeddings = [t.tolist() if hasattr(t, "tolist") else t for t in embeddings]
+            elif hasattr(embeddings, "tolist"):
+                embeddings = embeddings.tolist()
             
             if single:
                 return embeddings[0]
@@ -105,7 +119,7 @@ class Embedding:
         return {
             "model_name": self.model_name,
             "model_type": "Multilingual-E5-Large",
-            "embedding_dimension": self.model.get_embedding_dimension(),
+            "embedding_dimension": self.model.get_sentence_embedding_dimension(),  # ← 수정: get_embedding_dimension()은 존재하지 않는 메서드
             "query_prefix": self.query_prefix,
             "passage_prefix": self.passage_prefix
         }

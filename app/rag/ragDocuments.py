@@ -8,7 +8,7 @@ from pathlib import Path
 import logging
 
 from app.rag.embedding import get_embedding_model_em_rag_embedding
-from app.core.config import settings  # ← 이미 있음
+from app.core.config import Settings  # ← 이미 있음
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def import_csv_to_vectordb_rag_ragDocuments(csv_path: Path = None):
     
     # ✅ Path 객체로 변환
     if csv_path is None:
-        csv_path = settings.rag_documents_csv_path
+        csv_path = Settings.rag_documents_csv_path  # ← 수정: 소문자 settings(미정의) → Settings로 변경
     elif isinstance(csv_path, str):
         csv_path = Path(csv_path)
     
@@ -42,45 +42,39 @@ def import_csv_to_vectordb_rag_ragDocuments(csv_path: Path = None):
         
         print(f"✅ {len(df)}개 문서 읽음")
         
-        # [2] 임베딩 모델 로드
+        # [2] 임베딩 모델 로드 (GPU 없으면 여기서 RuntimeError 발생)
         print(f"\n🤖 임베딩 모델 로드 (Multilingual-E5-Large)...")
         embedding_model = get_embedding_model_em_rag_embedding()
         print(f"✅ 모델 로드 완료")
         
         # [3] Vector DB 초기화 ✅ (Path 객체 사용)
         print(f"\n🔧 Vector DB 초기화...")
-        print(f"   경로: {settings.chroma_db_path}")
+        print(f"   경로: {Settings.chroma_db_path}")
         
         chroma_client = chromadb.PersistentClient(
-            path=str(settings.chroma_db_path)  # ✅ 명시적으로 str 변환
+            path=str(Settings.chroma_db_path)  # ✅ 명시적으로 str 변환
         )
         collection = chroma_client.get_or_create_collection(
-            name=settings.chroma_collection_name
+            name=Settings.chroma_collection_name
         )
         
-        # [4] CSV 데이터를 임베딩한 후 Vector DB에 로드
+        # [4] CSV 데이터를 임베딩한 후 Vector DB에 로드 (배치 처리로 변경)
         print(f"\n💾 {len(df)}개 문서를 임베딩 후 Vector DB에 로드 중...")
         
-        ids = []
-        documents = []
-        embeddings = []
-        metadatas = []
-        
-        for idx, row in df.iterrows():
-            doc_text = row['document']
-            doc_embedding = embedding_model.embed_documents_em_rag_embedding(doc_text)
-            
-            ids.append(row['doc_id'])
-            documents.append(doc_text)
-            embeddings.append(doc_embedding)
-            metadatas.append({
+        ids = df['doc_id'].tolist()                 # ← 수정: for문 없이 컬럼 전체를 리스트로 한 번에 추출
+        documents = df['document'].tolist()          # ← 수정: 위와 동일
+        metadatas = [                                 # ← 수정: 리스트 컴프리헨션으로 한 번에 생성
+            {
                 "menu_id": row['menu_id'],
                 "menu_name": row['menu_name'],
                 "category": row['category']
-            })
-            
-            if (idx + 1) % 10 == 0:
-                print(f"  ├─ {idx + 1}/{len(df)} 임베딩 완료...")
+            }
+            for _, row in df.iterrows()
+        ]
+        
+        print(f"🤖 {len(documents)}개 문서 배치 임베딩 중...")
+        embeddings = embedding_model.embed_documents_em_rag_embedding(documents)  # ← 수정: for문으로 1개씩 호출하던 것 → 리스트 전체를 한 번에 호출
+        print(f"✅ 배치 임베딩 완료")
         
         collection.add(
             ids=ids,
@@ -97,6 +91,12 @@ def import_csv_to_vectordb_rag_ragDocuments(csv_path: Path = None):
             "count": len(ids),
             "message": f"{len(ids)}개 RAG 문서를 Multilingual-E5-Large로 임베딩하여 Vector DB에 로드했습니다"
         }
+    
+    except RuntimeError as e:
+        # ← 추가: GPU(CUDA) 관련 에러는 삼키지 않고 그대로 다시 던져서 서버 기동 자체를 막음
+        print(f"\n🚫 치명적 오류(GPU 미사용 환경): {str(e)}")
+        logger.critical(f"🚫 GPU 필수 환경인데 사용 불가: {str(e)}")
+        raise
     
     except Exception as e:
         print(f"\n❌ 오류: {str(e)}")
