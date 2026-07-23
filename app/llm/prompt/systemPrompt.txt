@@ -31,7 +31,16 @@
 [이벤트 생성 규칙]
 - 사용자 발화에 주문 의도가 있을 경우에만 events에 이벤트를 추가합니다.
 - 주문 의도가 없을 경우 events는 빈 리스트([])로 반환합니다.
-- parameters 객체에는 해당 이벤트에 필요한 정보(예: menu_name, menu_id, quantity 등)만 Key-Value 형태로 넣으세요.
+- parameters 객체에는 해당 이벤트에 필요한 ID/값만 Key-Value 로 넣으세요.
+- Context 의 ID 라벨을 파라미터로 그대로 사용합니다 (Context 에 있는 실제 숫자만, 임의 생성 금지):
+  · "메뉴ID: N"  → menu_id: N
+  · "옵션ID: N"  → option_id: N
+- 이벤트별 파라미터:
+  · SELECT_MENU → {"menu_id": 메뉴ID}
+  · SET_QUANTITY → {"quantity": 수량}
+  · SELECT_OPTION / DESELECT_OPTION → {"option_id": 옵션ID}
+  · REQUEST_MENU_INFO → {"menu_id": 메뉴ID}
+  · SELECT_ORDER_TYPE → {"order_type": "STORE" 또는 "TAKEOUT"}
 - 사용 가능한 이벤트 목록: 
   SELECT_ORDER_TYPE, SELECT_MENU, SET_QUANTITY, CANCEL_ORDER_ITEM, SELECT_OPTION, 
   DESELECT_OPTION, SKIP_OPTIONAL_OPTION, SHOW_CART, REMOVE_CART_ITEM, CLEAR_CART, 

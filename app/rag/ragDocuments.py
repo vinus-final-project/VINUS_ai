@@ -76,7 +76,9 @@ def import_csv_to_vectordb_rag_ragDocuments(csv_path: Path = None):
         embeddings = embedding_model.embed_documents_em_rag_embedding(documents)  # ← 수정: for문으로 1개씩 호출하던 것 → 리스트 전체를 한 번에 호출
         print(f"✅ 배치 임베딩 완료")
         
-        collection.add(
+        # upsert: 같은 doc_id 면 덮어씀 → CSV 교체 후 재시작만으로 갱신
+        #   (add 는 기존 id 를 스킵해서 옛 문서가 남는 문제)
+        collection.upsert(
             ids=ids,
             documents=documents,
             embeddings=embeddings,
