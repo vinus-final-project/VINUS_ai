@@ -1,3 +1,5 @@
+import logging
+logging.basicConfig(level=logging.INFO)
 from app.rag.ragDocuments import import_csv_to_vectordb_rag_ragDocuments
 from app.rag.ragService import get_rag_ragService
 from contextlib import asynccontextmanager
