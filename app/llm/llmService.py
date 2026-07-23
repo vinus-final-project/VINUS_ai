@@ -70,17 +70,19 @@ class LLMService:
         logger.info(f"프롬프트 생성 완료 | query: {query}")
 
         # 2. 토크나이즈
-        input_ids = cls._tokenizer.apply_chat_template(
+        inputs = cls._tokenizer.apply_chat_template(
             messages,
             tokenize=True,
             add_generation_prompt=True,
             return_tensors="pt",
+            return_dict=True,
         ).to("cuda")
 
         # 3. 생성
         with torch.no_grad():
             output_ids = cls._model.generate(
-                input_ids,
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs.get("attention_mask"),
                 max_new_tokens=Settings.llm_max_tokens,
                 temperature=Settings.llm_temperature,
                 do_sample=True,
@@ -88,7 +90,7 @@ class LLMService:
             )
 
         # 4. 디코딩
-        generated = output_ids[0][input_ids.shape[-1]:]
+        generated = output_ids[0][inputs["input_ids"].shape[-1]:]
         raw_output = cls._tokenizer.decode(generated, skip_special_tokens=True)
         logger.info(f"EXAONE 출력: {raw_output}")
 
