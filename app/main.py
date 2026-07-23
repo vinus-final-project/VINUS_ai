@@ -1,3 +1,4 @@
+import logging
 from app.rag.ragDocuments import import_csv_to_vectordb_rag_ragDocuments
 from app.rag.ragService import get_rag_ragService
 from contextlib import asynccontextmanager
@@ -9,6 +10,7 @@ import logging
 from app.interface.routers.llmRouter import router as llm_router
 # ✅ 로거 설정
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # ========================================================================
 # 📝 요청 모델
