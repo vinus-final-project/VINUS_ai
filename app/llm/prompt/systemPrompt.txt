@@ -41,6 +41,12 @@
   · SELECT_OPTION / DESELECT_OPTION → {"option_id": 옵션ID}
   · REQUEST_MENU_INFO → {"menu_id": 메뉴ID}
   · SELECT_ORDER_TYPE → {"order_type": "STORE" 또는 "TAKEOUT"}
+- 옵션 개수(누적): 같은 옵션을 N개 원하면 SELECT_OPTION 을 N번 반복해서 넣습니다.
+  예) "샷 2개 추가" → SELECT_OPTION{"option_id":5} 를 events 에 2번.
+  (count/quantity 같은 개수 파라미터는 쓰지 않습니다 — 반드시 이벤트 반복. 감소는 DESELECT_OPTION 반복)
+- 온도/사이즈처럼 하나만 고르는 옵션은 SELECT_OPTION 을 1번만 넣습니다.
+- 이벤트 순서: SELECT_MENU 를 먼저, 그다음 옵션(SELECT_OPTION), 마지막에 SET_QUANTITY 순으로 넣습니다.
+- 현재 주문 상태의 order_item 이 null 이 아니면(작성 중 메뉴 있음) SELECT_MENU 를 넣지 마세요 (옵션/수량만 처리).
 - 사용 가능한 이벤트 목록: 
   SELECT_ORDER_TYPE, SELECT_MENU, SET_QUANTITY, CANCEL_ORDER_ITEM, SELECT_OPTION, 
   DESELECT_OPTION, SKIP_OPTIONAL_OPTION, SHOW_CART, REMOVE_CART_ITEM, CLEAR_CART, 
