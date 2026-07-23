@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from app.core.config import settings
+from app.core.config import Settings
 from app.interface.dto.llmRequest import SessionState
 from app.interface.dto.llmResult import LLMResult
 from app.llm.promptBuilder import build_prompt_promptBuilder
@@ -29,12 +29,12 @@ class LLMService:
         logger.info(f"LLM 모델 로드 시작: {settings.llm_model_path}")
 
         cls._tokenizer = AutoTokenizer.from_pretrained(
-            settings.llm_model_path,
+            Settings.llm_model_path,
             trust_remote_code=True,
         )
 
         cls._model = AutoModelForCausalLM.from_pretrained(
-            settings.llm_model_path,
+            Settings.llm_model_path,
             torch_dtype=torch.float16,
             device_map="cuda",
             trust_remote_code=True,
@@ -70,25 +70,27 @@ class LLMService:
         logger.info(f"프롬프트 생성 완료 | query: {query}")
 
         # 2. 토크나이즈
-        input_ids = cls._tokenizer.apply_chat_template(
+        inputs = cls._tokenizer.apply_chat_template(
             messages,
             tokenize=True,
             add_generation_prompt=True,
             return_tensors="pt",
+            return_dict=True,
         ).to("cuda")
 
         # 3. 생성
         with torch.no_grad():
             output_ids = cls._model.generate(
-                input_ids,
-                max_new_tokens=settings.llm_max_tokens,
-                temperature=settings.llm_temperature,
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs.get("attention_mask"),
+                max_new_tokens=Settings.llm_max_tokens,
+                temperature=Settings.llm_temperature,
                 do_sample=True,
                 eos_token_id=cls._tokenizer.eos_token_id,
             )
 
         # 4. 디코딩
-        generated = output_ids[0][input_ids.shape[-1]:]
+        generated = output_ids[0][inputs["input_ids"].shape[-1]:]
         raw_output = cls._tokenizer.decode(generated, skip_special_tokens=True)
         logger.info(f"EXAONE 출력: {raw_output}")
 
