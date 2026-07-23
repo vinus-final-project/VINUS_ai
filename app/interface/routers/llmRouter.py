@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from fastapi import APIRouter, HTTPException
 from app.interface.dto.llmRequest import LLMRequest
 from app.interface.dto.llmResult import LLMResult
@@ -42,4 +43,5 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
 
     except Exception as e:
         logger.error(f"LLM 처리 오류: {str(e)} | 타입: {type(e).__name__}")
+        logger.error(f"상세 위치:\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
