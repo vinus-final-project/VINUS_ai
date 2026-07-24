@@ -24,7 +24,7 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
         rag_result = await asyncio.to_thread(
             rag_service.generate_context_rag_service,
             query=request.query,
-            n_results=25,   # 넉넉히 뽑아 알레르기 필터 후에도 후보 확보
+            n_results=5,
             exclude_allergies=request.session.allergies,
         )
         context = rag_result.get("context", "")

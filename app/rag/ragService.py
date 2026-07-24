@@ -77,7 +77,6 @@ class RagService:
                 return search_result
             results = search_result["results"]
             THRESHOLD = 0.6
-            MAX_CONTEXT = 5   # 필터 후 LLM에 넣을 최대 메뉴 수(컨텍스트 폭발 방지)
             document_texts = []
             filtered_results = []
             if results:
@@ -103,8 +102,6 @@ class RagService:
                     document_texts.append(doc_text)
                     filtered_results.append(result)
                     filtered_idx += 1
-                    if len(filtered_results) >= MAX_CONTEXT:
-                        break   # 상위 MAX_CONTEXT개만 컨텍스트로 사용
             if not document_texts:
                 context = "[안내] 사용자의 요청과 관련된 메뉴 정보를 메뉴판에서 찾을 수 없습니다. 사용자에게 매장 메뉴판에 없는 메뉴라고 정중히 안내하세요."
                 documents = []
