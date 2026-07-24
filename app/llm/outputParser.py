@@ -11,12 +11,16 @@ def _extract_json(text: str) -> str:
     # JSON 블록이 ```json ... ``` 형식으로 감싸져 있을 경우 제거
     match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
     if match:
-        return match.group(1)
-    # 중괄호로 시작하는 JSON 직접 추출
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        return match.group(0)
-    return text
+        json_str = match.group(1)
+    else:
+        # 중괄호로 시작하는 JSON 직접 추출
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        json_str = match.group(0) if match else text
+
+    # ✅ 인라인 // 주석 제거
+    json_str = re.sub(r'//[^\n"]*', '', json_str)
+
+    return json_str
 
 
 def _parse_events(events_data: list) -> list[FSMEvent]:
