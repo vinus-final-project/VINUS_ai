@@ -9,7 +9,7 @@ class SessionState(BaseModel):
     order_type: Optional[str] = None       # 주문 담당자 작업 예정
     order_item: Optional[dict] = None      # 주문 담당자 작업 예정
     cart: Optional[list] = None            # 카트 담당자 작업 예정
-
+    allergies: Optional[list[str]] = None
 
 class LLMRequest(BaseModel):
     """LLM Service 입력 DTO"""

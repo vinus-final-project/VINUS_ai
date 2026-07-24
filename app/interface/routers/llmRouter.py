@@ -24,7 +24,8 @@ async def generate_llm_result(request: LLMRequest) -> LLMResult:
         rag_result = await asyncio.to_thread(
             rag_service.generate_context_rag_service,
             query=request.query,
-            n_results=5
+            n_results=5,
+            exclude_allergies=request.session.allergies,
         )
         context = rag_result.get("context", "")
         logger.info(f"RAG 검색 완료 | context 길이: {len(context)}")
