@@ -62,7 +62,17 @@ class RagService:
         exclude_allergies: list = None,   # ← 파라미터 추가
     ) -> Dict:
         try:
-            search_result = self.search_rag_service(query, n_results)
+            # 제외 재료가 있으면 검색 쿼리에서 그 단어+부정표현을 제거 —
+            #   RAG(의미검색)가 "우유 없는"의 "우유"로 편향 검색하는 것 방지
+            search_query = query
+            if exclude_allergies:
+                import re
+                for _a in exclude_allergies:
+                    search_query = search_query.replace(_a, " ")
+                for _neg in ("없는", "없이", "안 들어간", "안들어간", "빼고", "빼", "말고", "제외"):
+                    search_query = search_query.replace(_neg, " ")
+                search_query = re.sub(r"\s+", " ", search_query).strip() or query
+            search_result = self.search_rag_service(search_query, n_results)
             if not search_result["success"]:
                 return search_result
             results = search_result["results"]
